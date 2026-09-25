@@ -3,6 +3,7 @@ import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
 interface OsAccentPluginSettings {
   autoSync: boolean;
   pollIntervalSec: number;
+  originalAccentColor?: string | null;
 }
 
 const DEFAULT_SETTINGS: OsAccentPluginSettings = {
@@ -71,7 +72,9 @@ export default class OsAccentColorPlugin extends Plugin {
     await this.loadSettings();
 
     // 1. Initial color synchronization
-    await this.syncAccentColor();
+    if (this.settings.autoSync) {
+      await this.syncAccentColor();
+    }
 
     // 2. Setup change listeners
     this.registerChangeListeners();
@@ -91,6 +94,7 @@ export default class OsAccentColorPlugin extends Plugin {
 
   onunload() {
     this.stopPolling();
+    this.restoreAccentColor();
 
     if (this.focusHandler) {
       window.removeEventListener("focus", this.focusHandler);
@@ -105,6 +109,7 @@ export default class OsAccentColorPlugin extends Plugin {
    * Fetches the current OS accent color and updates Obsidian if it changed.
    */
   async syncAccentColor(force = false): Promise<void> {
+    await this.captureOriginalAccentColor();
     const hexColor = await this.getSystemAccentColor();
     if (!hexColor) return;
 
@@ -240,6 +245,32 @@ export default class OsAccentColorPlugin extends Plugin {
     document.body.style.setProperty("--color-accent", hexColor);
   }
 
+  private async captureOriginalAccentColor(): Promise<void> {
+    if (this.settings.originalAccentColor !== undefined) return;
+
+    const currentColor = (this.app as any).vault?.getConfig?.("accentColor");
+    this.settings.originalAccentColor = typeof currentColor === "string" ? currentColor : null;
+    await this.saveSettings();
+  }
+
+  restoreAccentColor(): void {
+    const originalColor = this.settings.originalAccentColor;
+    if (originalColor === undefined) return;
+
+    const vault = (this.app as any).vault;
+    const customCss = (this.app as any).customCss;
+    if (originalColor === null) {
+      vault?.setConfig?.("accentColor", null);
+      customCss?.requestLoadTheme?.();
+      document.body.style.removeProperty("--color-accent");
+    } else {
+      this.applyAccentColor(originalColor);
+    }
+
+    this.settings.originalAccentColor = undefined;
+    void this.saveSettings();
+  }
+
   /**
    * Event listeners: window focus, dark/light theme switch, and interval polling.
    */
@@ -325,6 +356,11 @@ class OsAccentSettingTab extends PluginSettingTab {
       .addToggle((toggle) =>
         toggle.setValue(this.plugin.settings.autoSync).onChange(async (val) => {
           this.plugin.settings.autoSync = val;
+          if (val) {
+            await this.plugin.syncAccentColor();
+          } else {
+            this.plugin.restoreAccentColor();
+          }
           await this.plugin.saveSettings();
           this.plugin.restartPolling();
         })

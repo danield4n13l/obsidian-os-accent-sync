@@ -4,7 +4,7 @@ A desktop-only Obsidian plugin that keeps the app's accent color synchronized wi
 
 This plugin reads the active accent color from Windows or macOS system settings and applies it to Obsidian, so the app theme matches the rest of your desktop environment.
 
-**Previous accent color is overwritten, so only enable this plugin if you accept this!**
+The plugin saves your existing Obsidian accent color separately and restores it when automatic sync is disabled or the plugin is unloaded.
 
 ## Features
 
@@ -26,8 +26,8 @@ This plugin reads the active accent color from Windows or macOS system settings 
 - On Windows, the plugin reads the DWM AccentColor value from the Windows registry.
 - On macOS, it attempts to read AppleHighlightColor or AppleAccentColor settings.
 - If those sources are unavailable, it falls back to the browser’s CSS AccentColor value.
-- The detected color is then applied to Obsidian’s accent styling and refreshed when changes are detected.  
-**Accent color is overwritten, so only enable this plugin if you accept this fact!**
+- The detected color is then applied to Obsidian's accent styling and refreshed when changes are detected.
+- Your existing Obsidian accent color is saved before the first override, then restored when automatic sync is disabled or the plugin is unloaded.
 
 ## Installation
 
@@ -65,7 +65,8 @@ After enabling the plugin:
 
 ## TODOs
 
-- [ ] Store and separate the previously set Obsidian accent color from the system-derived one.
+- [x] ~~Store and separate the previously set Obsidian accent color from the system-derived one.~~  
+  The plugin now saves the accent color before first use AND when autoSync is turned off/ the plugin is unloaded, restores it.
 - [x] ~~Implement color contrast checking. If the chosen accentColor is bad for contrast, use e.g. the complimentary color or a default.~~  
   Solved with WCAG relative contrast testing and some iterative calculations (hopefully fast enough, without hogging the system).
 - [ ] ...
