@@ -12,6 +12,7 @@ The plugin saves your existing Obsidian accent color separately and restores it 
 - Supports Windows and macOS accent detection
 - Includes a manual sync command for immediate updates
 - Allows automatic polling with a configurable interval
+- Optionally uses Windows' Explorer fallback accent when the detected accent is nearly grey
 - Watches for focus and theme changes to refresh when needed
 - Falls back to Chromium system accent color detection when OS-specific values are unavailable
 
@@ -24,6 +25,7 @@ The plugin saves your existing Obsidian accent color separately and restores it 
 ## How it works
 
 - On Windows, the plugin reads the DWM AccentColor value from the Windows registry.
+- When enabled, a nearly grey Windows accent is replaced with Explorer's AccentColorMenu registry value (a fallback used by Windows DWM, also used in i.e. Microsoft PowerToys).
 - On macOS, it attempts to read AppleHighlightColor or AppleAccentColor settings.
 - If those sources are unavailable, it falls back to the browser’s CSS AccentColor value.
 - The detected color is then applied to Obsidian's accent styling and refreshed when changes are detected.

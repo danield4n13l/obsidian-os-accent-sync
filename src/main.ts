@@ -3,16 +3,19 @@ import { App, Plugin, PluginSettingTab, Setting } from "obsidian";
 interface OsAccentPluginSettings {
   autoSync: boolean;
   pollIntervalSec: number;
+  useExplorerAccentFallback: boolean;
   originalAccentColor?: string | null;
 }
 
 const DEFAULT_SETTINGS: OsAccentPluginSettings = {
   autoSync: true,
-  pollIntervalSec: 10
+  pollIntervalSec: 10,
+  useExplorerAccentFallback: false
 };
 
 const MIN_ACCENT_LUMINANCE = 0.18;
 const MAX_ACCENT_LUMINANCE = 0.82;
+const MAX_GREY_ACCENT_CHROMA = 0.15;
 
 function getRelativeLuminance(red: number, green: number, blue: number): number {
   const linearize = (value: number) => {
@@ -147,19 +150,42 @@ export default class OsAccentColorPlugin extends Plugin {
       const output = await this.execCommand(
         'reg query "HKCU\\Software\\Microsoft\\Windows\\DWM" /v AccentColor'
       );
-      const match = output.match(/AccentColor\s+REG_DWORD\s+0x([0-9a-fA-F]+)/);
-      if (!match) return null;
+      const winColor = this.parseWindowsAccentColor(output, "AccentColor");
+      if (!winColor || !this.settings.useExplorerAccentFallback || !this.isGreyAccent(winColor)) {
+        return winColor;
+      }
 
-      const rawHex = match[1].padStart(8, "0");
-      // Byte offsets: [0..1 AA] [2..3 BB] [4..5 GG] [6..7 RR]
-      const b = rawHex.slice(2, 4);
-      const g = rawHex.slice(4, 6);
-      const r = rawHex.slice(6, 8);
-
-      return `#${r}${g}${b}`;
+      try {
+        const explorerOutput = await this.execCommand(
+          'reg query "HKCU\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Accent" /v StartColorMenu'
+        );
+        return this.parseWindowsAccentColor(explorerOutput, "StartColorMenu") ?? winColor;
+      } catch {
+        return winColor;
+      }
     } catch {
       return null;
     }
+  }
+
+  private parseWindowsAccentColor(output: string, valueName: string): string | null {
+    const match = output.match(new RegExp(`${valueName}\\s+REG_DWORD\\s+0x([0-9a-fA-F]+)`));
+    if (!match) return null;
+
+    const rawHex = match[1].padStart(8, "0");
+    // Windows stores the color as AABBGGRR.
+    return `#${rawHex.slice(6, 8)}${rawHex.slice(4, 6)}${rawHex.slice(2, 4)}`;
+  }
+
+  private isGreyAccent(hexColor: string): boolean {
+    const channels = hexColor.match(/^#?([0-9a-f]{6})$/i)?.[1].match(/.{2}/g)?.map((channel) =>
+      parseInt(channel, 16)
+    );
+    if (!channels || channels.length !== 3) return false;
+
+    const maximum = Math.max(...channels);
+    if (maximum === 0) return true;
+    return (maximum - Math.min(...channels)) / maximum <= MAX_GREY_ACCENT_CHROMA;
   }
 
   /**
@@ -379,6 +405,17 @@ class OsAccentSettingTab extends PluginSettingTab {
             await this.plugin.saveSettings();
             this.plugin.restartPolling();
           })
+      );
+
+    new Setting(containerEl)
+      .setName("Use Windows fallback for grey accents")
+      .setDesc("When the Windows accent is nearly grey, use Explorer's AccentColorMenu registry color instead.")
+      .addToggle((toggle) =>
+        toggle.setValue(this.plugin.settings.useExplorerAccentFallback).onChange(async (val) => {
+          this.plugin.settings.useExplorerAccentFallback = val;
+          await this.plugin.saveSettings();
+          await this.plugin.syncAccentColor();
+        })
       );
 
     new Setting(containerEl)
