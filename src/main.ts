@@ -10,6 +10,55 @@ const DEFAULT_SETTINGS: OsAccentPluginSettings = {
   pollIntervalSec: 10
 };
 
+const MIN_ACCENT_LUMINANCE = 0.18;
+const MAX_ACCENT_LUMINANCE = 0.82;
+
+function getRelativeLuminance(red: number, green: number, blue: number): number {
+  const linearize = (value: number) => {
+    const normalized = value / 255;
+    return normalized <= 0.04045 ? normalized / 12.92 : ((normalized + 0.055) / 1.055) ** 2.4;
+  };
+
+  return 0.2126 * linearize(red) + 0.7152 * linearize(green) + 0.0722 * linearize(blue);
+}
+
+function adjustAccentColor(hexColor: string): string {
+  const match = hexColor.match(/^#?([0-9a-f]{6})$/i);
+  if (!match) return hexColor;
+
+  const channels = match[1].match(/.{2}/g)?.map((channel) => parseInt(channel, 16));
+  if (!channels || channels.length !== 3) return hexColor;
+
+  const luminance = getRelativeLuminance(channels[0], channels[1], channels[2]);
+  if (luminance >= MIN_ACCENT_LUMINANCE && luminance <= MAX_ACCENT_LUMINANCE) {
+    return `#${match[1]}`;
+  }
+
+  const lighten = luminance < MIN_ACCENT_LUMINANCE;
+  const targetLuminance = lighten ? MIN_ACCENT_LUMINANCE : MAX_ACCENT_LUMINANCE;
+  let lowerAmount = 0;
+  let upperAmount = 1;
+
+  for (let iteration = 0; iteration < 8; iteration++) {
+    const amount = (lowerAmount + upperAmount) / 2;
+    const adjusted = channels.map((channel) =>
+      Math.round(lighten ? channel + (255 - channel) * amount : channel * (1 - amount))
+    );
+    const adjustedLuminance = getRelativeLuminance(adjusted[0], adjusted[1], adjusted[2]);
+
+    if ((lighten && adjustedLuminance < targetLuminance) || (!lighten && adjustedLuminance > targetLuminance)) {
+      lowerAmount = amount;
+    } else {
+      upperAmount = amount;
+    }
+  }
+
+  const adjusted = channels.map((channel) =>
+    Math.round(lighten ? channel + (255 - channel) * upperAmount : channel * (1 - upperAmount))
+  );
+  return `#${adjusted.map((channel) => channel.toString(16).padStart(2, "0")).join("")}`;
+}
+
 export default class OsAccentColorPlugin extends Plugin {
   settings: OsAccentPluginSettings;
   private checkIntervalId: number | null = null;
@@ -59,9 +108,10 @@ export default class OsAccentColorPlugin extends Plugin {
     const hexColor = await this.getSystemAccentColor();
     if (!hexColor) return;
 
-    if (force || hexColor.toLowerCase() !== this.lastAppliedColor?.toLowerCase()) {
-      this.applyAccentColor(hexColor);
-      this.lastAppliedColor = hexColor;
+    const adjustedColor = adjustAccentColor(hexColor);
+    if (force || adjustedColor.toLowerCase() !== this.lastAppliedColor?.toLowerCase()) {
+      this.applyAccentColor(adjustedColor);
+      this.lastAppliedColor = adjustedColor;
     }
   }
 

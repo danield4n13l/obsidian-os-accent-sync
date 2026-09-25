@@ -66,6 +66,9 @@ After enabling the plugin:
 ## TODOs
 
 - [ ] Store and separate the previously set Obsidian accent color from the system-derived one.
+- [x] ~~Implement color contrast checking. If the chosen accentColor is bad for contrast, use e.g. the complimentary color or a default.~~  
+  Solved with WCAG relative contrast testing and some iterative calculations (hopefully fast enough, without hogging the system).
+- [ ] ...
 
 ## Credit and note
 
