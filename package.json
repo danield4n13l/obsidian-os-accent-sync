@@ -1,0 +1,24 @@
+{
+  "name": "obsidian-os-accent-sync",
+  "version": "1.0.0",
+  "description": "Sync Obsidian accent color with OS system accent color.\nThis plugin has not been reviewed by Obsidian staff.",
+  "main": "main.js",
+  "scripts": {
+    "dev": "node esbuild.config.mjs",
+    "build": "node esbuild.config.mjs production"
+  },
+  "keywords": [
+    "obsidian",
+    "plugin",
+    "accent-color",
+    "theme"
+  ],
+  "license": "MIT",
+  "devDependencies": {
+    "@types/node": "^20.11.0",
+    "esbuild": "^0.20.0",
+    "obsidian": "latest",
+    "tslib": "^2.6.2",
+    "typescript": "^5.3.3"
+  }
+}

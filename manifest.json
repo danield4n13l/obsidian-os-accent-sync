@@ -1,0 +1,10 @@
+{
+  "manifest_version": 2,
+  "id": "os-accent-sync",
+  "name": "OS Accent Color Sync",
+  "version": "1.0.0",
+  "minAppVersion": "1.4.0",
+  "description": "Automatically synchronizes Obsidian's accent color with your Windows or macOS system accent color.",
+  "author": "danield4n13l",
+  "isDesktopOnly": true
+}
