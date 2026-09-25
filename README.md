@@ -52,7 +52,7 @@ npm install
 npm run build
 ```
 
-This outputs the bundled plugin file `main.js` for Obsidian.
+This outputs the `build/` folder with the `manifest.json` and the plugin file `main.js` for Obsidian.
 
 ## Usage
 
@@ -62,6 +62,10 @@ After enabling the plugin:
 - The plugin also re-checks the accent color when Obsidian regains focus.
 - You can trigger a manual sync from the command palette via:
   - `Sync accent color with OS now`
+
+## TODOs
+
+- [ ] Store and separate the previously set Obsidian accent color from the system-derived one.
 
 ## Credit and note
 

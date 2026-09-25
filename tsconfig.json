@@ -1,11 +1,12 @@
 {
   "compilerOptions": {
     "baseUrl": ".",
+    "outDir": "./build",
     "inlineSources": true,
     "module": "ESNext",
     "target": "ES2022",
     "allowJs": true,
-    "moduleResolution": "node",
+    "moduleResolution": "node16",
     "importHelpers": true,
     "isolatedModules": true,
     "strictNullChecks": true,

@@ -3,6 +3,25 @@ import process from "process";
 
 const prod = process.argv[2] === "production";
 
+function copyManifestPlugin() {
+  return {
+    name: "copy-manifest",
+    setup(build) {
+      build.onEnd(() => {
+        if (!fs.existsSync("build")) {
+          fs.mkdirSync("build", { recursive: true });
+        }
+        if (fs.existsSync("manifest.json")) {
+          fs.copyFileSync("manifest.json", path.join("build", "manifest.json"));
+        }
+        if (fs.existsSync("styles.css")) {
+          fs.copyFileSync("styles.css", path.join("build", "styles.css"));
+        }
+      });
+    }
+  };
+}
+
 const context = await esbuild.context({
   entryPoints: ["src/main.ts"],
   bundle: true,
@@ -19,7 +38,8 @@ const context = await esbuild.context({
   logLevel: "info",
   sourcemap: prod ? false : "inline",
   treeShaking: true,
-  outfile: "main.js"
+  outfile: "build/main.js",
+  plugins: [copyManifestPlugin()]
 });
 
 if (prod) {
