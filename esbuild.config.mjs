@@ -1,5 +1,6 @@
 import esbuild from "esbuild";
 import process from "process";
+import fs from "fs";
 
 const prod = process.argv[2] === "production";
 
@@ -12,10 +13,10 @@ function copyManifestPlugin() {
           fs.mkdirSync("build", { recursive: true });
         }
         if (fs.existsSync("manifest.json")) {
-          fs.copyFileSync("manifest.json", path.join("build", "manifest.json"));
+          fs.copyFileSync("manifest.json", "build/manifest.json");
         }
         if (fs.existsSync("styles.css")) {
-          fs.copyFileSync("styles.css", path.join("build", "styles.css"));
+          fs.copyFileSync("styles.css", "build/styles.css");
         }
       });
     }

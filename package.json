@@ -16,9 +16,12 @@
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.11.0",
-    "esbuild": "^0.20.0",
+    "esbuild": "^0.28.2",
     "obsidian": "latest",
     "tslib": "^2.6.2",
     "typescript": "^5.3.3"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
